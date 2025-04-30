@@ -56,6 +56,13 @@ func main() {
 		infoLog.Println("база данных создана", fileDb)
 	}
 
+	// Пример подключения к базе данных SQLite
+	database, err := sql.Open("sqlite3", "./project.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer database.Close()
+
 	// Пример использования структур
 	project := Project{
 		Company:    "ООО Ромашка",
