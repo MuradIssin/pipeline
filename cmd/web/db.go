@@ -5,37 +5,37 @@ package main
 // 	"fmt"
 // )
 
-// // Структура для филиала
-// type Branch struct {
-// 	ID   int
-// 	Name string
-// }
+// Структура для филиала
+type Branch struct {
+	ID   int
+	Name string
+}
 
-// // Структура для исполнителя
-// type Executor struct {
-// 	ID     int
-// 	Name   string
-// 	Email  string
-// 	Mobile string
-// }
+// Структура для исполнителя
+type Executor struct {
+	ID     int
+	Name   string
+	Email  string
+	Mobile string
+}
 
-// // Структура для кредитной программы
-// type CreditProgram struct {
-// 	ID   int
-// 	Name string
-// }
+// Структура для кредитной программы
+type CreditProgram struct {
+	ID   int
+	Name string
+}
 
-// // Структура для статуса заявки
-// type Status struct {
-// 	ID   int
-// 	Name string
-// }
+// Структура для статуса заявки
+type Status struct {
+	ID   int
+	Name string
+}
 
-// // Структура для цели кредита
-// type LoanPurpose struct {
-// 	ID   int
-// 	Name string
-// }
+// Структура для цели кредита
+type LoanPurpose struct {
+	ID   int
+	Name string
+}
 
 // type Project struct {
 // 	ID               int

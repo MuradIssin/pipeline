@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"pipeline/internal/models"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -16,7 +17,7 @@ import (
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
-	// projects *Project
+	projects *models.ProjectModel
 }
 
 const fileDb = "pipeline.db"
@@ -49,49 +50,18 @@ func main() {
 	}
 	defer db.Close()
 	if install {
-		err = models.createTables(db)
+		err = models.CreateTables(db)
+		// err = models.CreateTables(db)
 		if err != nil {
 			infoLog.Fatal("Ошибка при создании таблиц:", err)
 		}
 		infoLog.Println("база данных создана", fileDb)
 	}
 
-	// // Пример подключения к базе данных SQLite
-	// database, err := sql.Open("sqlite3", "./pipeline.db")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer database.Close()
-	// Пример использования структур
-	// project := Project{
-	// 	Company:    "ООО Ромашка",
-	// 	BranchID:   1,
-	// 	ExecutorID: 2,
-	// 	Amount:     5000000,
-	// 	StatusID:   1,
-	// 	Comments:   "Приоритетный проект",
-	// 	LoanPurposeIDs: []int{
-	// 		1, // Пополнение оборотных средств
-	// 		2, // Закупка сырья
-	// 	},
-	// 	CreditProgramIDs: []int{
-	// 		1, // Кредит на развитие
-	// 		2, // Кредит для малого бизнеса
-	// 	},
-	// }
-
-	// // Вставляем проект в базу
-	// projectID, err := insertProject(db, project)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// // Выводим ID вставленного проекта
-	// fmt.Println("Проект успешно добавлен с ID:", projectID)
-
 	app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
+		projects: &models.ProjectModel{DB: db},
 	}
 
 	srv := &http.Server{

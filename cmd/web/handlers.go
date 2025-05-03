@@ -1,8 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"pipeline/internal/models"
 	"strconv"
 	"text/template"
 )
@@ -44,10 +47,24 @@ func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "Display a specific project with ID %d...", id)
+	project, err := app.projects.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	// // Write the snippet data as a plain-text HTTP response body.
+	fmt.Fprintf(w, "%+v", project)
+
+	// fmt.Fprintf(w, "Display a specific project with ID %d...", id)
 }
 
 func (app *application) pipeCreate(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
 		// http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -55,5 +72,34 @@ func (app *application) pipeCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("Create a new project..."))
+	project := models.Project{
+		Company:    "ООО Ромашка",
+		BranchID:   1,
+		ExecutorID: 2,
+		Amount:     5000000,
+		StatusID:   1,
+		Comments:   "Приоритетный проект",
+		LoanPurposeIDs: []int{
+			1, // Пополнение оборотных средств
+			2, // Закупка сырья
+		},
+		CreditProgramIDs: []int{
+			1, // Кредит на развитие
+			2, // Кредит для малого бизнеса
+		},
+	}
+
+	// Вставляем проект в базу
+	projectID, err := app.projects.Insert(project)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Выводим ID вставленного проекта
+	fmt.Println("Проект успешно добавлен с ID:", projectID)
+
+	// w.Write([]byte("Create a new project..."))
+	// Redirect the user to the relevant page for the snippet.
+
+	http.Redirect(w, r, fmt.Sprintf("/pipe/view?id=%d", projectID), http.StatusSeeOther)
+
 }
