@@ -1,0 +1,5 @@
+        <pre><strong>Цели кредитования: </strong><code>{{range .LoanPurposesIDs}}{{.}}, {{end}}</code></pre>
+        <!-- <pre><strong>Кредитные программы: </strong><code>{{range .CreditProgramsIDs}}{{.}}, {{end}}</code></pre> -->
+        <!-- <pre><strong>Сумма: </strong><code>{{.Amount}}</code></pre> -->
+        <!-- <pre><strong>Статус: </strong><code>{{.StatusID}}</code></pre> -->
+        <!-- <pre><strong>Комментарии: </strong><code>{{.Comments}}</code></pre> -->

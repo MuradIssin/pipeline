@@ -117,7 +117,7 @@ func insertInitialData(db *sql.DB) error {
 	}
 
 	// Вставка значений для кредитных программ
-	creditPrograms := []string{"Кредитная программа 1", "Кредитная программа 2", "Кредитная программа 3"}
+	creditPrograms := []string{"Программа 1", "Программа 2", "Программа 3"}
 	for _, program := range creditPrograms {
 		_, err := db.Exec(`INSERT INTO credit_programs (name) VALUES (?)`, program)
 		if err != nil {
@@ -146,6 +146,82 @@ func insertInitialData(db *sql.DB) error {
 	return nil
 }
 
+// func LoadBranches(db *sql.DB) ([]Branch, error) {
+// 	var branches []Branch
+// 	rows, err := db.Query("SELECT id, name FROM branches WHERE is_deleted != 1")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+
+// 	for rows.Next() {
+// 		var branch Branch
+// 		if err := rows.Scan(&branch.ID, &branch.Name); err != nil {
+// 			return nil, err
+// 		}
+// 		branches = append(branches, branch)
+// 	}
+
+// 	return branches, nil
+// }
+
+// func LoadLoanPurposes(db *sql.DB) ([]LoanPurpose, error) {
+// 	var loanPurposes []LoanPurpose
+// 	rows, err := db.Query("SELECT id, name FROM loan_purposes WHERE is_deleted != 1")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+
+// 	for rows.Next() {
+// 		var loanPurpose LoanPurpose
+// 		if err := rows.Scan(&loanPurpose.ID, &loanPurpose.Name); err != nil {
+// 			return nil, err
+// 		}
+// 		loanPurposes = append(loanPurposes, loanPurpose)
+// 	}
+
+// 	return loanPurposes, nil
+// }
+
+// func LoadCreditPrograms(db *sql.DB) ([]CreditProgram, error) {
+// 	var creditPrograms []CreditProgram
+// 	rows, err := db.Query("SELECT id, name FROM credit_programs WHERE is_deleted != 1")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+
+// 	for rows.Next() {
+// 		var creditProgram CreditProgram
+// 		if err := rows.Scan(&creditProgram.ID, &creditProgram.Name); err != nil {
+// 			return nil, err
+// 		}
+// 		creditPrograms = append(creditPrograms, creditProgram)
+// 	}
+
+// 	return creditPrograms, nil
+// }
+
+// func LoadStatuses(db *sql.DB) ([]Status, error) {
+// 	var statuses []Status
+// 	rows, err := db.Query("SELECT id, name FROM statuses WHERE is_deleted != 1")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+
+// 	for rows.Next() {
+// 		var status Status
+// 		if err := rows.Scan(&status.ID, &status.Name); err != nil {
+// 			return nil, err
+// 		}
+// 		statuses = append(statuses, status)
+// 	}
+
+// 	return statuses, nil
+// }
+
 func (m *ProjectModel) Insert(p Project) (int, error) {
 	// Вставка основного проекта
 	res, err := m.DB.Exec(`
@@ -156,11 +232,11 @@ func (m *ProjectModel) Insert(p Project) (int, error) {
 		return 0, fmt.Errorf("ошибка при вставке проекта: %v", err)
 	}
 
-	projectID64, err := res.LastInsertId()
+	projectIDLast, err := res.LastInsertId()
 	if err != nil {
 		return 0, fmt.Errorf("не удалось получить ID проекта: %v", err)
 	}
-	projectID := int(projectID64)
+	projectID := int(projectIDLast)
 
 	// Вставка целей кредита
 	for _, purposeID := range p.LoanPurposeIDs {
@@ -189,9 +265,9 @@ func (m *ProjectModel) Insert(p Project) (int, error) {
 func (m *ProjectModel) Get(id int) (*Project, error) {
 	// Получаем основную информацию о проекте
 	query := `
-	SELECT id, company, branch_id, executor_id, amount, status_id, comments
+	SELECT id, company, branch_id, executor_id, amount, status_id, comments, created, last_update
 	FROM projects
-	WHERE id = ?
+	WHERE id = ? AND is_deleted != 1
 	`
 	row := m.DB.QueryRow(query, id)
 	project := &Project{}
@@ -203,6 +279,8 @@ func (m *ProjectModel) Get(id int) (*Project, error) {
 		&project.Amount,
 		&project.StatusID,
 		&project.Comments,
+		&project.Created,
+		&project.LastUpdate,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -251,7 +329,8 @@ func (m *ProjectModel) Get(id int) (*Project, error) {
 		return nil, err
 	}
 	project.LoanPurposeIDs = loanPurposeIDs
-
+	// project.LoanPurposeNames = loanPurposeNames
+	// fmt.Println(project)
 	return project, nil
 }
 
@@ -357,5 +436,44 @@ func (m *ProjectModel) GetLoanPurposeIDs(projectID int) ([]int, error) {
 		return nil, err
 	}
 
+	// 	// Если целей нет — возвращаем пустые слайсы
+	// 	if len(ids) == 0 {
+	// 		return []int{}, []string{}, nil
+	// 	}
+
+	// 	// Формируем placeholders (?, ?, ...) для IN (...)
+	// 	placeholders := make([]string, len(ids))
+	// 	args := make([]interface{}, len(ids))
+	// 	for i, id := range ids {
+	// 		placeholders[i] = "?"
+	// 		args[i] = id
+	// 	}
+
+	// 	// Запрос названий по списку ID
+	// 	nameQuery := fmt.Sprintf(`
+	// SELECT name
+	// FROM loan_purposes
+	// WHERE id IN (%s) AND is_deleted != 1
+	// `, strings.Join(placeholders, ", "))
+
+	// 	nameRows, err := m.DB.Query(nameQuery, args...)
+	// 	if err != nil {
+	// 		return ids, nil, err
+	// 	}
+	// 	defer nameRows.Close()
+
+	// 	var names []string
+	// 	for nameRows.Next() {
+	// 		var name string
+	// 		if err := nameRows.Scan(&name); err != nil {
+	// 			return ids, nil, err
+	// 		}
+	// 		names = append(names, name)
+	// 	}
+	// 	if err := nameRows.Err(); err != nil {
+	// 		return ids, nil, err
+	// 	}
+
+	// return ids, names, nil
 	return ids, nil
 }

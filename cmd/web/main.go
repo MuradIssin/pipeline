@@ -22,8 +22,33 @@ type application struct {
 
 const fileDb = "pipeline.db"
 
-func main() {
+type Branch struct {
+	ID   int
+	Name string
+}
 
+type LoanPurpose struct {
+	ID   int
+	Name string
+}
+
+type CreditProgram struct {
+	ID   int
+	Name string
+}
+
+type Status struct {
+	ID   int
+	Name string
+}
+
+// Глобальные срезы для справочных данных
+var Branches []Branch
+var LoanPurposes []LoanPurpose
+var CreditPrograms []CreditProgram
+var Statuses []Status
+
+func main() {
 	addr := flag.String("addr", ":4000", "HTTP network address")
 	flag.Parse()
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -73,4 +98,30 @@ func main() {
 	infoLog.Printf("Starting server on %s", *addr)
 	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
+}
+
+func init() {
+	Branches = []Branch{
+		{ID: 1, Name: "Алматы"},
+		{ID: 2, Name: "Астана"},
+		{ID: 3, Name: "Шымкент"},
+	}
+
+	LoanPurposes = []LoanPurpose{
+		{ID: 1, Name: "Пополнение оборотных средств"},
+		{ID: 2, Name: "Приобретение оборудования"},
+		{ID: 3, Name: "Расширение бизнеса"},
+	}
+
+	CreditPrograms = []CreditProgram{
+		{ID: 1, Name: "Программа 1"},
+		{ID: 2, Name: "Программа 2"},
+		{ID: 3, Name: "Программа 3"},
+	}
+
+	Statuses = []Status{
+		{ID: 1, Name: "В процессе"},
+		{ID: 2, Name: "Одобрено"},
+		{ID: 3, Name: "Отклонено"},
+	}
 }
