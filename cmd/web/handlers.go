@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"pipeline/internal/models"
 	"strconv"
-	"text/template"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -16,27 +15,35 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w) // Use the notFound() helper
 		return
 	}
-
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/pages/home.html",
-		"./ui/html/partials/nav.html",
-	}
-
-	ts, err := template.ParseFiles(files...)
+	projects, err := app.projects.AllIn()
 	if err != nil {
-		app.errorLog.Println(err.Error())
-		// http.Error(w, "Internal Server Error", 500)
-		app.serverError(w, err) // Use the serverError() helper.
+		app.serverError(w, err)
 		return
 	}
 
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		app.errorLog.Println(err.Error())
-		// http.Error(w, "Internal Server Error", 500)
-		app.serverError(w, err) // Use the serverError() helper.
+	for _, project := range projects {
+		fmt.Fprintf(w, "%+v\n", project)
 	}
+	// files := []string{
+	// 	"./ui/html/base.html",
+	// 	"./ui/html/pages/home.html",
+	// 	"./ui/html/partials/nav.html",
+	// }
+
+	// ts, err := template.ParseFiles(files...)
+	// if err != nil {
+	// 	app.errorLog.Println(err.Error())
+	// 	// http.Error(w, "Internal Server Error", 500)
+	// 	app.serverError(w, err) // Use the serverError() helper.
+	// 	return
+	// }
+
+	// err = ts.ExecuteTemplate(w, "base", nil)
+	// if err != nil {
+	// 	app.errorLog.Println(err.Error())
+	// 	// http.Error(w, "Internal Server Error", 500)
+	// 	app.serverError(w, err) // Use the serverError() helper.
+	// }
 }
 
 func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +53,6 @@ func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w) // Use the notFound() helper.
 		return
 	}
-
 	project, err := app.projects.Get(id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
@@ -56,10 +62,8 @@ func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
 	// // Write the snippet data as a plain-text HTTP response body.
 	fmt.Fprintf(w, "%+v", project)
-
 	// fmt.Fprintf(w, "Display a specific project with ID %d...", id)
 }
 

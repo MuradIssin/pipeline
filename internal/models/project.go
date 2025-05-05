@@ -25,29 +25,34 @@ func CreateTables(db *sql.DB) error {
 	query := `
 CREATE TABLE IF NOT EXISTS branches (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL
+	name TEXT NOT NULL,
+	is_deleted BOOLEAN NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS executors (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	name TEXT NOT NULL,
 	email TEXT,
-	mobile TEXT
+	mobile TEXT,
+	is_deleted BOOLEAN NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS loan_purposes (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL
+	name TEXT NOT NULL,
+	is_deleted BOOLEAN NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS credit_programs (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL
+	name TEXT NOT NULL,
+	is_deleted BOOLEAN NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS statuses (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL
+	name TEXT NOT NULL,
+	is_deleted BOOLEAN NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS projects (
@@ -58,6 +63,7 @@ CREATE TABLE IF NOT EXISTS projects (
 	amount INTEGER,
 	status_id INTEGER,
 	comments TEXT,
+	is_deleted BOOLEAN NOT NULL DEFAULT 0,
 	FOREIGN KEY (branch_id) REFERENCES branches(id),
 	FOREIGN KEY (executor_id) REFERENCES executors(id),
 	FOREIGN KEY (status_id) REFERENCES statuses(id)
@@ -67,6 +73,7 @@ CREATE TABLE IF NOT EXISTS project_loan_purposes (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	project_id INTEGER NOT NULL,
 	purpose_id INTEGER NOT NULL,
+	is_deleted BOOLEAN NOT NULL DEFAULT 0,
 	FOREIGN KEY (project_id) REFERENCES projects(id),
 	FOREIGN KEY (purpose_id) REFERENCES loan_purposes(id)
 );
@@ -75,6 +82,7 @@ CREATE TABLE IF NOT EXISTS project_credit_programs (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	project_id INTEGER NOT NULL,
 	credit_program_id INTEGER NOT NULL,
+	is_deleted BOOLEAN NOT NULL DEFAULT 0,
 	FOREIGN KEY (project_id) REFERENCES projects(id),
 	FOREIGN KEY (credit_program_id) REFERENCES credit_programs(id)
 );
@@ -175,15 +183,15 @@ func (m *ProjectModel) Insert(p Project) (int, error) {
 
 // This will return a specific snippet based on its id.
 func (m *ProjectModel) Get(id int) (*Project, error) {
-	project := &Project{}
-
 	// Получаем основную информацию о проекте
 	query := `
-			SELECT id, company, branch_id, executor_id, amount, status_id, comments
-			FROM projects
-			WHERE id = ?
-		`
-	err := m.DB.QueryRow(query).Scan(
+	SELECT id, company, branch_id, executor_id, amount, status_id, comments
+	FROM projects
+	WHERE id = ?
+	`
+	row := m.DB.QueryRow(query, id)
+	project := &Project{}
+	err := row.Scan(
 		&project.ID,
 		&project.Company,
 		&project.BranchID,
@@ -194,19 +202,16 @@ func (m *ProjectModel) Get(id int) (*Project, error) {
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			fmt.Println("проект не найдет")
-			return nil, nil // проект не найден
+			return nil, ErrNoRecord // проект не найден
 		}
 		return nil, fmt.Errorf("ошибка при получении проекта: %v", err)
 	}
-
 	// Загружаем связанные цели кредита
 	rows, err := m.DB.Query(`SELECT purpose_id FROM project_loan_purposes WHERE project_id = ?`, id)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при получении целей кредита: %v", err)
 	}
 	defer rows.Close()
-
 	for rows.Next() {
 		var purposeID int
 		if err := rows.Scan(&purposeID); err != nil {
@@ -214,14 +219,12 @@ func (m *ProjectModel) Get(id int) (*Project, error) {
 		}
 		project.LoanPurposeIDs = append(project.LoanPurposeIDs, purposeID)
 	}
-
 	// Загружаем связанные кредитные программы
 	rows, err = m.DB.Query(`SELECT credit_program_id FROM project_credit_programs WHERE project_id = ?`, id)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при получении кредитных программ: %v", err)
 	}
 	defer rows.Close()
-
 	for rows.Next() {
 		var programID int
 		if err := rows.Scan(&programID); err != nil {
@@ -229,11 +232,38 @@ func (m *ProjectModel) Get(id int) (*Project, error) {
 		}
 		project.CreditProgramIDs = append(project.CreditProgramIDs, programID)
 	}
-
 	return project, nil
 }
 
 // This will return the 10 most recently created snippets.
-func (m *ProjectModel) Latest() ([]*Project, error) {
-	return nil, nil
+func (m *ProjectModel) AllIn() ([]*Project, error) {
+	stmt := `
+	SELECT id, company, branch_id, executor_id, amount, status_id, comments
+	FROM projects
+	WHERE is_deleted != 1
+	ORDER BY id
+	`
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	projects := []*Project{}
+	for rows.Next() {
+		p := &Project{}
+		err = rows.Scan(
+			&p.ID,
+			&p.Company,
+			&p.BranchID,
+			&p.ExecutorID,
+			&p.Amount,
+			&p.StatusID,
+			&p.Comments,
+		)
+		if err != nil {
+			return nil, err
+		}
+		projects = append(projects, p)
+	}
+	return projects, nil
 }
