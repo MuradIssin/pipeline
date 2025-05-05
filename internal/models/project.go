@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"time"
 )
 
 type Project struct {
@@ -15,6 +16,8 @@ type Project struct {
 	Comments         string
 	LoanPurposeIDs   []int
 	CreditProgramIDs []int
+	Created          time.Time
+	LastUpdate       time.Time
 }
 
 type ProjectModel struct {
@@ -64,6 +67,8 @@ CREATE TABLE IF NOT EXISTS projects (
 	status_id INTEGER,
 	comments TEXT,
 	is_deleted BOOLEAN NOT NULL DEFAULT 0,
+	created DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	last_update DATETIME NOT NULL,
 	FOREIGN KEY (branch_id) REFERENCES branches(id),
 	FOREIGN KEY (executor_id) REFERENCES executors(id),
 	FOREIGN KEY (status_id) REFERENCES statuses(id)
@@ -91,7 +96,6 @@ CREATE TABLE IF NOT EXISTS project_credit_programs (
 	if err != nil {
 		return fmt.Errorf("ошибка при создании таблиц: %v", err)
 	}
-
 	// Вставка начальных значений в таблицы
 	err = insertInitialData(db)
 	if err != nil {
@@ -145,9 +149,9 @@ func insertInitialData(db *sql.DB) error {
 func (m *ProjectModel) Insert(p Project) (int, error) {
 	// Вставка основного проекта
 	res, err := m.DB.Exec(`
-		INSERT INTO projects (company, branch_id, executor_id, amount, status_id, comments)
-		VALUES (?, ?, ?, ?, ?, ?)`,
-		p.Company, p.BranchID, p.ExecutorID, p.Amount, p.StatusID, p.Comments)
+		INSERT INTO projects (company, branch_id, executor_id, amount, status_id, comments, last_update)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		p.Company, p.BranchID, p.ExecutorID, p.Amount, p.StatusID, p.Comments, p.LastUpdate)
 	if err != nil {
 		return 0, fmt.Errorf("ошибка при вставке проекта: %v", err)
 	}
@@ -206,32 +210,48 @@ func (m *ProjectModel) Get(id int) (*Project, error) {
 		}
 		return nil, fmt.Errorf("ошибка при получении проекта: %v", err)
 	}
-	// Загружаем связанные цели кредита
-	rows, err := m.DB.Query(`SELECT purpose_id FROM project_loan_purposes WHERE project_id = ?`, id)
+
+	// // Загружаем связанные цели кредита
+	// rows, err := m.DB.Query(`SELECT purpose_id FROM project_loan_purposes WHERE project_id = ?`, id)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("ошибка при получении целей кредита: %v", err)
+	// }
+	// defer rows.Close()
+	// for rows.Next() {
+	// 	var purposeID int
+	// 	if err := rows.Scan(&purposeID); err != nil {
+	// 		return nil, err
+	// 	}
+	// 	project.LoanPurposeIDs = append(project.LoanPurposeIDs, purposeID)
+	// }
+	// // Загружаем связанные кредитные программы
+	// rows, err = m.DB.Query(`SELECT credit_program_id FROM project_credit_programs WHERE project_id = ?`, id)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("ошибка при получении кредитных программ: %v", err)
+	// }
+	// defer rows.Close()
+	// for rows.Next() {
+	// 	var programID int
+	// 	if err := rows.Scan(&programID); err != nil {
+	// 		return nil, err
+	// 	}
+	// 	project.CreditProgramIDs = append(project.CreditProgramIDs, programID)
+	// }
+
+	// Загрузка связанных кредитных программ
+	creditProgramIDs, err := m.GetCreditProgramIDs(id)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка при получении целей кредита: %v", err)
+		return nil, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var purposeID int
-		if err := rows.Scan(&purposeID); err != nil {
-			return nil, err
-		}
-		project.LoanPurposeIDs = append(project.LoanPurposeIDs, purposeID)
-	}
-	// Загружаем связанные кредитные программы
-	rows, err = m.DB.Query(`SELECT credit_program_id FROM project_credit_programs WHERE project_id = ?`, id)
+	project.CreditProgramIDs = creditProgramIDs
+
+	// Загрузка связанных целей кредитования
+	loanPurposeIDs, err := m.GetLoanPurposeIDs(id)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка при получении кредитных программ: %v", err)
+		return nil, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var programID int
-		if err := rows.Scan(&programID); err != nil {
-			return nil, err
-		}
-		project.CreditProgramIDs = append(project.CreditProgramIDs, programID)
-	}
+	project.LoanPurposeIDs = loanPurposeIDs
+
 	return project, nil
 }
 
@@ -263,7 +283,79 @@ func (m *ProjectModel) AllIn() ([]*Project, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		creditProgramIDs, err := m.GetCreditProgramIDs(p.ID)
+		if err != nil {
+			return nil, err
+		}
+		p.CreditProgramIDs = creditProgramIDs
+
+		// Загрузка связанных целей кредитования
+		loanPurposeIDs, err := m.GetLoanPurposeIDs(p.ID)
+		if err != nil {
+			return nil, err
+		}
+		p.LoanPurposeIDs = loanPurposeIDs
+
 		projects = append(projects, p)
 	}
 	return projects, nil
+}
+
+func (m *ProjectModel) GetCreditProgramIDs(projectID int) ([]int, error) {
+	query := `
+		SELECT credit_program_id
+		FROM project_credit_programs
+		WHERE project_id = ? AND is_deleted != 1
+	`
+
+	rows, err := m.DB.Query(query, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+func (m *ProjectModel) GetLoanPurposeIDs(projectID int) ([]int, error) {
+	query := `
+		SELECT purpose_id
+		FROM project_loan_purposes
+		WHERE project_id = ? AND is_deleted != 1
+	`
+
+	rows, err := m.DB.Query(query, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return ids, nil
 }

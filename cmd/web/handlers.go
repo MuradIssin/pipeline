@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"pipeline/internal/models"
 	"strconv"
+	"time"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -91,6 +92,7 @@ func (app *application) pipeCreate(w http.ResponseWriter, r *http.Request) {
 			1, // Кредит на развитие
 			2, // Кредит для малого бизнеса
 		},
+		LastUpdate: time.Now(),
 	}
 
 	// Вставляем проект в базу
