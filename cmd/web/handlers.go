@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"pipeline/internal/models"
 	"strconv"
+	"text/template"
 	"time"
 )
 
@@ -50,7 +51,6 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		// http.NotFound(w, r)
 		app.notFound(w) // Use the notFound() helper.
 		return
 	}
@@ -63,9 +63,25 @@ func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// // Write the snippet data as a plain-text HTTP response body.
-	fmt.Fprintf(w, "%+v", project)
-	// fmt.Fprintf(w, "Display a specific project with ID %d...", id)
+
+	files := []string{
+		"./ui/html/base.html",
+		"./ui/html/partials/nav.html",
+		"./ui/html/partials/view.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = ts.ExecuteTemplate(w, "base", project)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+	// fmt.Fprintf(w, "%+v", project)
 }
 
 func (app *application) pipeCreate(w http.ResponseWriter, r *http.Request) {
