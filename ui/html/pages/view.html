@@ -7,6 +7,7 @@
                 <strong>{{.Company}}</strong>
                 <span>#{{.ID}}</span>
             </div>
+            
             <pre><strong>Филиал: </strong><code>{{ GetBranchName .BranchID }}</code></pre>
             <pre><strong>Исполнитель: </strong><code>{{ GetUserName .ExecutorID}}</code></pre>
             <pre><strong>Цели кредитования: </strong><code>{{range .LoanPurposeIDs}}{{GetGoalsName .}} {{end}}</code></pre>
