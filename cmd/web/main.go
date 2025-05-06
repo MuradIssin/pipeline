@@ -10,43 +10,19 @@ import (
 	"os"
 	"path/filepath"
 	"pipeline/internal/models"
+	"text/template"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
-	projects *models.ProjectModel
+	errorLog      *log.Logger
+	infoLog       *log.Logger
+	projects      *models.ProjectModel
+	templateCashe map[string]*template.Template
 }
 
 const fileDb = "pipeline.db"
-
-type Branch struct {
-	ID   int
-	Name string
-}
-
-type LoanPurpose struct {
-	ID   int
-	Name string
-}
-
-type CreditProgram struct {
-	ID   int
-	Name string
-}
-
-type Status struct {
-	ID   int
-	Name string
-}
-
-// Глобальные срезы для справочных данных
-var Branches []Branch
-var LoanPurposes []LoanPurpose
-var CreditPrograms []CreditProgram
-var Statuses []Status
 
 func main() {
 	addr := flag.String("addr", ":4000", "HTTP network address")
@@ -98,30 +74,4 @@ func main() {
 	infoLog.Printf("Starting server on %s", *addr)
 	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
-}
-
-func init() {
-	Branches = []Branch{
-		{ID: 1, Name: "Алматы"},
-		{ID: 2, Name: "Астана"},
-		{ID: 3, Name: "Шымкент"},
-	}
-
-	LoanPurposes = []LoanPurpose{
-		{ID: 1, Name: "Пополнение оборотных средств"},
-		{ID: 2, Name: "Приобретение оборудования"},
-		{ID: 3, Name: "Расширение бизнеса"},
-	}
-
-	CreditPrograms = []CreditProgram{
-		{ID: 1, Name: "Программа 1"},
-		{ID: 2, Name: "Программа 2"},
-		{ID: 3, Name: "Программа 3"},
-	}
-
-	Statuses = []Status{
-		{ID: 1, Name: "В процессе"},
-		{ID: 2, Name: "Одобрено"},
-		{ID: 3, Name: "Отклонено"},
-	}
 }

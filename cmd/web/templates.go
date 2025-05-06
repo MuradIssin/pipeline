@@ -1,11 +1,34 @@
 package main
 
-import "pipeline/internal/models"
+import (
+	"path/filepath"
+	"pipeline/internal/models"
+	"text/template"
+)
 
-// Define a templateData type to act as the holding structure for
-// any dynamic data that we want to pass to our HTML templates.
-// At the moment it only contains one field, but we'll add more
-// to it as the build progresses.
 type templateData struct {
-	Project *models.Project
+	Project  *models.Project
+	Projects []*models.Project
+}
+
+func newTemplateCache() (map[string]*template.Template, error) {
+	cache := map[string]*template.Template{}
+	pages, err := filepath.Glob("./ui/html/pages/*.html")
+	if err != nil {
+		return nil, err
+	}
+	for _, page := range pages {
+		name := filepath.Base(page)
+		files := []string{
+			"./ui/html/base.html",
+			"./ui/html/partials/nav.html",
+			page,
+		}
+		ts, err := template.ParseFiles(files...)
+		if err != nil {
+			return nil, err
+		}
+		cache[name] = ts
+	}
+	return cache, nil
 }

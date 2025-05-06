@@ -13,7 +13,6 @@ import (
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		// http.NotFound(w, r)
 		app.notFound(w) // Use the notFound() helper
 		return
 	}
@@ -22,30 +21,43 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-
-	for _, project := range projects {
-		fmt.Fprintf(w, "%+v\n", project)
-	}
-	// files := []string{
-	// 	"./ui/html/base.html",
-	// 	"./ui/html/pages/home.html",
-	// 	"./ui/html/partials/nav.html",
+	// for _, project := range projects {
+	// 	fmt.Fprintf(w, "%+v\n", project)
 	// }
+
+	files := []string{
+		"./ui/html/base.html",
+		"./ui/html/pages/home.html",
+		"./ui/html/partials/nav.html",
+	}
+
+	// Регистрируем функцию и парсим шаблоны
+	funcMap := template.FuncMap{
+		"GetBranchName":    models.GetBranchName,
+		"GetUserName":      models.GetUserName,
+		"GetGoalsName":     models.GetCreditGoal,
+		"FormatNumberView": models.FormatNumber,
+		"GetCreditName":    models.GetCreditProg,
+		"GetStatusName":    models.GetStatus,
+		"FDate":            models.FormatDate,
+	}
 
 	// ts, err := template.ParseFiles(files...)
-	// if err != nil {
-	// 	app.errorLog.Println(err.Error())
-	// 	// http.Error(w, "Internal Server Error", 500)
-	// 	app.serverError(w, err) // Use the serverError() helper.
-	// 	return
-	// }
+	tmpl, err := template.New("base").Funcs(funcMap).ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err) // Use the serverError() helper.
+		return
+	}
 
-	// err = ts.ExecuteTemplate(w, "base", nil)
-	// if err != nil {
-	// 	app.errorLog.Println(err.Error())
-	// 	// http.Error(w, "Internal Server Error", 500)
-	// 	app.serverError(w, err) // Use the serverError() helper.
-	// }
+	data := &templateData{
+		Projects: projects,
+	}
+
+	// err = ts.ExecuteTemplate(w, "base", data)
+	err = tmpl.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, err) // Use the serverError() helper.
+	}
 }
 
 func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
@@ -87,8 +99,14 @@ func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data := &templateData{
+		Project: project,
+	}
+
 	// err = ts.ExecuteTemplate(w, "base", project)
-	err = tmpl.ExecuteTemplate(w, "base", project)
+	// err = tmpl.ExecuteTemplate(w, "base", project)
+	err = tmpl.ExecuteTemplate(w, "base", data)
+
 	if err != nil {
 		app.serverError(w, err)
 	}

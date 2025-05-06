@@ -2,5 +2,25 @@
 
 {{define "main"}}
     <h2>Кредитные заявки</h2>
-    <p>пока тут ничего нету!</p>
+    {{if .Projects}}
+    <table>
+        <tr>
+            <th>Компания</th>
+            <th>Филиал</th>
+            <th>Сумма</th>
+            <th>Статус</th>
+        </tr>
+        {{range .Projects}}
+        <tr>
+            <td><a href="/pipe/view?id={{.ID}}">{{.Company}}</td>
+            <td>{{GetBranchName .BranchID}}</td>
+            <td>{{FormatNumberView .Amount}}</td>
+            <td>{{GetStatusName .StatusID}}</td>
+        </tr>
+        {{end}}
+    </table>
+    {{else}}
+        <p>пока тут ничего нету!</p>
+    {{end}}
+
 {{end}}

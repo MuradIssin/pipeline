@@ -1,23 +1,25 @@
-{{define "title"}}Project #{{.ID}}{{end}}
+{{define "title"}}Project #{{.Project.ID}}{{end}}
 
 {{define "main"}}
-    <div class='snippet'>
-        <div class='metadata'>
-            <strong>{{.Company}}</strong>
-            <span>#{{.ID}}</span>
-        </div>
-        <pre><strong>Филиал: </strong><code>{{ GetBranchName .BranchID }}</code></pre>
-        <pre><strong>Исполнитель: </strong><code>{{ GetUserName .ExecutorID}}</code></pre>
-        <pre><strong>Цели кредитования: </strong><code>{{range .LoanPurposeIDs}}{{GetGoalsName .}} {{end}}</code></pre>
-        <pre><strong>Кредитные программы: </strong><code>{{range .CreditProgramIDs}}{{GetCreditName .}} {{end}}</code></pre>
-        <pre><strong>Сумма: </strong><code>{{FormatNumberView .Amount}}</code></pre>
-        <pre><strong>Статус: </strong><code>{{GetStatusName .StatusID}}</code></pre>
-        <pre><strong>Комментарии: </strong><code>{{.Comments}}</code></pre>
- 
+    {{with .Project}}
+        <div class='snippet'>
+            <div class='metadata'>
+                <strong>{{.Company}}</strong>
+                <span>#{{.ID}}</span>
+            </div>
+            <pre><strong>Филиал: </strong><code>{{ GetBranchName .BranchID }}</code></pre>
+            <pre><strong>Исполнитель: </strong><code>{{ GetUserName .ExecutorID}}</code></pre>
+            <pre><strong>Цели кредитования: </strong><code>{{range .LoanPurposeIDs}}{{GetGoalsName .}} {{end}}</code></pre>
+            <pre><strong>Кредитные программы: </strong><code>{{range .CreditProgramIDs}}{{GetCreditName .}} {{end}}</code></pre>
+            <pre><strong>Сумма: </strong><code>{{FormatNumberView .Amount}}</code></pre>
+            <pre><strong>Статус: </strong><code>{{GetStatusName .StatusID}}</code></pre>
+            <pre><strong>Комментарии: </strong><code>{{.Comments}}</code></pre>
+    
 
-        <div class='metadata'>
-            <time>создан: {{FDate .Created}}</time>
-            <time>обновлен: {{FDate .LastUpdate}}</time>
+            <div class='metadata'>
+                <time>создан: {{FDate .Created}}</time>
+                <time>обновлен: {{FDate .LastUpdate}}</time>
+            </div>
         </div>
-    </div>
+    {{end}}
 {{end}}
