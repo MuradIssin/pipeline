@@ -7,8 +7,9 @@ import (
 )
 
 type templateData struct {
-	Project  *models.Project
-	Projects []*models.Project
+	CurrentYear int
+	Project     *models.Project
+	Projects    []*models.Project
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

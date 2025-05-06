@@ -20,44 +20,9 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-
-	app.render(w, http.StatusOK, "home.html", &templateData{
-		Projects: projects,
-	})
-
-	// files := []string{
-	// 	"./ui/html/base.html",
-	// 	"./ui/html/pages/home.html",
-	// 	"./ui/html/partials/nav.html",
-	// }
-
-	// // Регистрируем функцию и парсим шаблоны
-	// funcMap := template.FuncMap{
-	// 	"GetBranchName":    models.GetBranchName,
-	// 	"GetUserName":      models.GetUserName,
-	// 	"GetGoalsName":     models.GetCreditGoal,
-	// 	"FormatNumberView": models.FormatNumber,
-	// 	"GetCreditName":    models.GetCreditProg,
-	// 	"GetStatusName":    models.GetStatus,
-	// 	"FDate":            models.FormatDate,
-	// }
-
-	// // ts, err := template.ParseFiles(files...)
-	// tmpl, err := template.New("base").Funcs(funcMap).ParseFiles(files...)
-	// if err != nil {
-	// 	app.serverError(w, err) // Use the serverError() helper.
-	// 	return
-	// }
-
-	// data := &templateData{
-	// 	Projects: projects,
-	// }
-
-	// // err = ts.ExecuteTemplate(w, "base", data)
-	// err = tmpl.ExecuteTemplate(w, "base", data)
-	// if err != nil {
-	// 	app.serverError(w, err) // Use the serverError() helper.
-	// }
+	data := app.newTemplateData(r)
+	data.Projects = projects
+	app.render(w, http.StatusOK, "home.html", data)
 }
 
 func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
@@ -76,9 +41,13 @@ func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.render(w, http.StatusOK, "view.html", &templateData{
-		Project: project,
-	})
+	data := app.newTemplateData(r)
+	data.Project = project
+	app.render(w, http.StatusOK, "view.html", data)
+
+	// app.render(w, http.StatusOK, "view.html", &templateData{
+	// 	Project: project,
+	// })
 
 	// files := []string{
 	// 	"./ui/html/base.html",
