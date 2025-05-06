@@ -63,20 +63,32 @@ func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
 	files := []string{
 		"./ui/html/base.html",
 		"./ui/html/partials/nav.html",
 		"./ui/html/partials/view.html",
 	}
 
-	ts, err := template.ParseFiles(files...)
+	// Регистрируем функцию и парсим шаблоны
+	funcMap := template.FuncMap{
+		"GetBranchName":    models.GetBranchName,
+		"GetUserName":      models.GetUserName,
+		"GetGoalsName":     models.GetCreditGoal,
+		"FormatNumberView": models.FormatNumber,
+		"GetCreditName":    models.GetCreditProg,
+		"GetStatusName":    models.GetStatus,
+		"FDate":            models.FormatDate,
+	}
+
+	// ts, err := template.ParseFiles(files...)
+	tmpl, err := template.New("base").Funcs(funcMap).ParseFiles(files...)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	err = ts.ExecuteTemplate(w, "base", project)
+	// err = ts.ExecuteTemplate(w, "base", project)
+	err = tmpl.ExecuteTemplate(w, "base", project)
 	if err != nil {
 		app.serverError(w, err)
 	}

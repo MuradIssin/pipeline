@@ -3,6 +3,8 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"pipeline/internal/data"
+	"strconv"
 	"time"
 )
 
@@ -26,71 +28,71 @@ type ProjectModel struct {
 
 func CreateTables(db *sql.DB) error {
 	query := `
-CREATE TABLE IF NOT EXISTS branches (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL,
-	is_deleted BOOLEAN NOT NULL DEFAULT 0
-);
+		CREATE TABLE IF NOT EXISTS branches (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			is_deleted BOOLEAN NOT NULL DEFAULT 0
+		);
 
-CREATE TABLE IF NOT EXISTS executors (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL,
-	email TEXT,
-	mobile TEXT,
-	is_deleted BOOLEAN NOT NULL DEFAULT 0
-);
+		CREATE TABLE IF NOT EXISTS executors (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			email TEXT,
+			mobile TEXT,
+			is_deleted BOOLEAN NOT NULL DEFAULT 0
+		);
 
-CREATE TABLE IF NOT EXISTS loan_purposes (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL,
-	is_deleted BOOLEAN NOT NULL DEFAULT 0
-);
+		CREATE TABLE IF NOT EXISTS loan_purposes (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			is_deleted BOOLEAN NOT NULL DEFAULT 0
+		);
 
-CREATE TABLE IF NOT EXISTS credit_programs (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL,
-	is_deleted BOOLEAN NOT NULL DEFAULT 0
-);
+		CREATE TABLE IF NOT EXISTS credit_programs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			is_deleted BOOLEAN NOT NULL DEFAULT 0
+		);
 
-CREATE TABLE IF NOT EXISTS statuses (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL,
-	is_deleted BOOLEAN NOT NULL DEFAULT 0
-);
+		CREATE TABLE IF NOT EXISTS statuses (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			is_deleted BOOLEAN NOT NULL DEFAULT 0
+		);
 
-CREATE TABLE IF NOT EXISTS projects (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	company TEXT NOT NULL,
-	branch_id INTEGER,
-	executor_id INTEGER,
-	amount INTEGER,
-	status_id INTEGER,
-	comments TEXT,
-	is_deleted BOOLEAN NOT NULL DEFAULT 0,
-	created DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	last_update DATETIME NOT NULL,
-	FOREIGN KEY (branch_id) REFERENCES branches(id),
-	FOREIGN KEY (executor_id) REFERENCES executors(id),
-	FOREIGN KEY (status_id) REFERENCES statuses(id)
-);
+		CREATE TABLE IF NOT EXISTS projects (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			company TEXT NOT NULL,
+			branch_id INTEGER,
+			executor_id INTEGER,
+			amount INTEGER,
+			status_id INTEGER,
+			comments TEXT,
+			is_deleted BOOLEAN NOT NULL DEFAULT 0,
+			created DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+			last_update DATETIME NOT NULL,
+			FOREIGN KEY (branch_id) REFERENCES branches(id),
+			FOREIGN KEY (executor_id) REFERENCES executors(id),
+			FOREIGN KEY (status_id) REFERENCES statuses(id)
+		);
 
-CREATE TABLE IF NOT EXISTS project_loan_purposes (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	project_id INTEGER NOT NULL,
-	purpose_id INTEGER NOT NULL,
-	is_deleted BOOLEAN NOT NULL DEFAULT 0,
-	FOREIGN KEY (project_id) REFERENCES projects(id),
-	FOREIGN KEY (purpose_id) REFERENCES loan_purposes(id)
-);
+		CREATE TABLE IF NOT EXISTS project_loan_purposes (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			project_id INTEGER NOT NULL,
+			purpose_id INTEGER NOT NULL,
+			is_deleted BOOLEAN NOT NULL DEFAULT 0,
+			FOREIGN KEY (project_id) REFERENCES projects(id),
+			FOREIGN KEY (purpose_id) REFERENCES loan_purposes(id)
+		);
 
-CREATE TABLE IF NOT EXISTS project_credit_programs (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	project_id INTEGER NOT NULL,
-	credit_program_id INTEGER NOT NULL,
-	is_deleted BOOLEAN NOT NULL DEFAULT 0,
-	FOREIGN KEY (project_id) REFERENCES projects(id),
-	FOREIGN KEY (credit_program_id) REFERENCES credit_programs(id)
-);
+		CREATE TABLE IF NOT EXISTS project_credit_programs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			project_id INTEGER NOT NULL,
+			credit_program_id INTEGER NOT NULL,
+			is_deleted BOOLEAN NOT NULL DEFAULT 0,
+			FOREIGN KEY (project_id) REFERENCES projects(id),
+			FOREIGN KEY (credit_program_id) REFERENCES credit_programs(id)
+		);
 `
 	_, err := db.Exec(query)
 	if err != nil {
@@ -289,33 +291,6 @@ func (m *ProjectModel) Get(id int) (*Project, error) {
 		return nil, fmt.Errorf("ошибка при получении проекта: %v", err)
 	}
 
-	// // Загружаем связанные цели кредита
-	// rows, err := m.DB.Query(`SELECT purpose_id FROM project_loan_purposes WHERE project_id = ?`, id)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("ошибка при получении целей кредита: %v", err)
-	// }
-	// defer rows.Close()
-	// for rows.Next() {
-	// 	var purposeID int
-	// 	if err := rows.Scan(&purposeID); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	project.LoanPurposeIDs = append(project.LoanPurposeIDs, purposeID)
-	// }
-	// // Загружаем связанные кредитные программы
-	// rows, err = m.DB.Query(`SELECT credit_program_id FROM project_credit_programs WHERE project_id = ?`, id)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("ошибка при получении кредитных программ: %v", err)
-	// }
-	// defer rows.Close()
-	// for rows.Next() {
-	// 	var programID int
-	// 	if err := rows.Scan(&programID); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	project.CreditProgramIDs = append(project.CreditProgramIDs, programID)
-	// }
-
 	// Загрузка связанных кредитных программ
 	creditProgramIDs, err := m.GetCreditProgramIDs(id)
 	if err != nil {
@@ -329,8 +304,6 @@ func (m *ProjectModel) Get(id int) (*Project, error) {
 		return nil, err
 	}
 	project.LoanPurposeIDs = loanPurposeIDs
-	// project.LoanPurposeNames = loanPurposeNames
-	// fmt.Println(project)
 	return project, nil
 }
 
@@ -436,44 +409,72 @@ func (m *ProjectModel) GetLoanPurposeIDs(projectID int) ([]int, error) {
 		return nil, err
 	}
 
-	// 	// Если целей нет — возвращаем пустые слайсы
-	// 	if len(ids) == 0 {
-	// 		return []int{}, []string{}, nil
-	// 	}
-
-	// 	// Формируем placeholders (?, ?, ...) для IN (...)
-	// 	placeholders := make([]string, len(ids))
-	// 	args := make([]interface{}, len(ids))
-	// 	for i, id := range ids {
-	// 		placeholders[i] = "?"
-	// 		args[i] = id
-	// 	}
-
-	// 	// Запрос названий по списку ID
-	// 	nameQuery := fmt.Sprintf(`
-	// SELECT name
-	// FROM loan_purposes
-	// WHERE id IN (%s) AND is_deleted != 1
-	// `, strings.Join(placeholders, ", "))
-
-	// 	nameRows, err := m.DB.Query(nameQuery, args...)
-	// 	if err != nil {
-	// 		return ids, nil, err
-	// 	}
-	// 	defer nameRows.Close()
-
-	// 	var names []string
-	// 	for nameRows.Next() {
-	// 		var name string
-	// 		if err := nameRows.Scan(&name); err != nil {
-	// 			return ids, nil, err
-	// 		}
-	// 		names = append(names, name)
-	// 	}
-	// 	if err := nameRows.Err(); err != nil {
-	// 		return ids, nil, err
-	// 	}
-
-	// return ids, names, nil
 	return ids, nil
+}
+
+// Вспомогательная функция для получения имени филиала по ID
+func GetBranchName(id int) string {
+	for _, b := range data.Branches {
+		if b.ID == id {
+			return b.Name
+		}
+	}
+	return "Неизвестный филиал"
+}
+
+func GetUserName(id int) string {
+	for _, b := range data.Executors {
+		if b.ID == id {
+			return b.Name
+		}
+	}
+	return "Неизвестное имя"
+}
+
+func GetCreditGoal(id int) string {
+	for _, b := range data.LoanPurposes {
+		if b.ID == id {
+			return b.Name
+		}
+	}
+	return "Неизвестная цель кредитования"
+}
+
+func GetCreditProg(id int) string {
+	for _, b := range data.CreditPrograms {
+		if b.ID == id {
+			return b.Name
+		}
+	}
+	return "Неизвестная программа кредитования"
+}
+
+// Разделение числа на разряды с пробелами (например: 1 000 000)
+func FormatNumber(n uint) string {
+	s := strconv.FormatUint(uint64(n), 10)
+
+	result := ""
+	count := 0
+
+	for i := len(s) - 1; i >= 0; i-- {
+		if count != 0 && count%3 == 0 {
+			result = " " + result
+		}
+		result = string(s[i]) + result
+		count++
+	}
+	return result
+}
+
+func GetStatus(id int) string {
+	for _, b := range data.Statuses {
+		if b.ID == id {
+			return b.Name
+		}
+	}
+	return "Неизвестная программа кредитования"
+}
+
+func FormatDate(t time.Time) string {
+	return t.Format("02.01.2006 15:04")
 }
