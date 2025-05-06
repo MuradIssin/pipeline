@@ -19,7 +19,7 @@ type application struct {
 	errorLog      *log.Logger
 	infoLog       *log.Logger
 	projects      *models.ProjectModel
-	templateCashe map[string]*template.Template
+	templateCache map[string]*template.Template
 }
 
 const fileDb = "pipeline.db"
@@ -59,10 +59,17 @@ func main() {
 		infoLog.Println("база данных создана", fileDb)
 	}
 
+	// cache init
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
 	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
-		projects: &models.ProjectModel{DB: db},
+		errorLog:      errorLog,
+		infoLog:       infoLog,
+		projects:      &models.ProjectModel{DB: db},
+		templateCache: templateCache,
 	}
 
 	srv := &http.Server{

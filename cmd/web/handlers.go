@@ -21,9 +21,6 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	// for _, project := range projects {
-	// 	fmt.Fprintf(w, "%+v\n", project)
-	// }
 
 	files := []string{
 		"./ui/html/base.html",
@@ -75,43 +72,39 @@ func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/partials/nav.html",
-		"./ui/html/partials/view.html",
-	}
 
-	// Регистрируем функцию и парсим шаблоны
-	funcMap := template.FuncMap{
-		"GetBranchName":    models.GetBranchName,
-		"GetUserName":      models.GetUserName,
-		"GetGoalsName":     models.GetCreditGoal,
-		"FormatNumberView": models.FormatNumber,
-		"GetCreditName":    models.GetCreditProg,
-		"GetStatusName":    models.GetStatus,
-		"FDate":            models.FormatDate,
-	}
-
-	// ts, err := template.ParseFiles(files...)
-	tmpl, err := template.New("base").Funcs(funcMap).ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	data := &templateData{
+	app.render(w, http.StatusOK, "view.html", &templateData{
 		Project: project,
-	}
+	})
 
-	// err = ts.ExecuteTemplate(w, "base", project)
-	// err = tmpl.ExecuteTemplate(w, "base", project)
-	err = tmpl.ExecuteTemplate(w, "base", data)
+	// files := []string{
+	// 	"./ui/html/base.html",
+	// 	"./ui/html/partials/nav.html",
+	// 	"./ui/html/partials/view.html",
+	// }
 
-	if err != nil {
-		app.serverError(w, err)
-	}
-
-	// fmt.Fprintf(w, "%+v", project)
+	// // Регистрируем функцию и парсим шаблоны
+	// funcMap := template.FuncMap{
+	// 	"GetBranchName":    models.GetBranchName,
+	// 	"GetUserName":      models.GetUserName,
+	// 	"GetGoalsName":     models.GetCreditGoal,
+	// 	"FormatNumberView": models.FormatNumber,
+	// 	"GetCreditName":    models.GetCreditProg,
+	// 	"GetStatusName":    models.GetStatus,
+	// 	"FDate":            models.FormatDate,
+	// }
+	// tmpl, err := template.New("base").Funcs(funcMap).ParseFiles(files...)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// 	return
+	// }
+	// data := &templateData{
+	// 	Project: project,
+	// }
+	// err = tmpl.ExecuteTemplate(w, "base", data)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// }
 }
 
 func (app *application) pipeCreate(w http.ResponseWriter, r *http.Request) {

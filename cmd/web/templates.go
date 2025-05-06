@@ -13,6 +13,17 @@ type templateData struct {
 
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
+
+	funcMap := template.FuncMap{
+		"GetBranchName":    models.GetBranchName,
+		"GetUserName":      models.GetUserName,
+		"GetGoalsName":     models.GetCreditGoal,
+		"FormatNumberView": models.FormatNumber,
+		"GetCreditName":    models.GetCreditProg,
+		"GetStatusName":    models.GetStatus,
+		"FDate":            models.FormatDate,
+	}
+
 	pages, err := filepath.Glob("./ui/html/pages/*.html")
 	if err != nil {
 		return nil, err
@@ -22,9 +33,12 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		files := []string{
 			"./ui/html/base.html",
 			"./ui/html/partials/nav.html",
+			// "./ui/html/partials/view.html",
 			page,
 		}
-		ts, err := template.ParseFiles(files...)
+		// ts, err := template.ParseFiles(files...)
+		ts, err := template.New(name).Funcs(funcMap).ParseFiles(files...)
+
 		if err != nil {
 			return nil, err
 		}
