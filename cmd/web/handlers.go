@@ -8,13 +8,16 @@ import (
 	"pipeline/internal/models"
 	"strconv"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		app.notFound(w) // Use the notFound() helper
-		return
-	}
+	// if r.URL.Path != "/" {
+	// 	app.notFound(w) // Use the notFound() helper
+	// 	return
+	// }
+
 	projects, err := app.projects.AllIn()
 	if err != nil {
 		app.serverError(w, err)
@@ -26,7 +29,9 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	params := httprouter.ParamsFromContext(r.Context())
+	id, err := strconv.Atoi(params.ByName("id"))
+	// id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
 		app.notFound(w) // Use the notFound() helper.
 		return
@@ -80,21 +85,41 @@ func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) pipeCreate(w http.ResponseWriter, r *http.Request) {
+	// w.Write([]byte("Display the form for creating a new snippet..."))
+	data := app.newTemplateData(r)
+	app.render(w, http.StatusOK, "create.html", data)
+}
 
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		// http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		app.clientError(w, http.StatusMethodNotAllowed) // Use the clientError() helper.
+func (app *application) pipeCreatePost(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
+	company := r.PostForm.Get("company")
+	comments := r.PostForm.Get("comments")
+
+	// expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	// if err != nil {
+	// 		app.clientError(w, http.StatusBadRequest)
+	// 		return
+	// }
+
+	// if r.Method != http.MethodPost {
+	// 	w.Header().Set("Allow", http.MethodPost)
+	// 	// http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	// 	app.clientError(w, http.StatusMethodNotAllowed) // Use the clientError() helper.
+	// 	return
+	// }
+
 	project := models.Project{
-		Company:    "ООО Ромашка",
+		Company:    company,
 		BranchID:   1,
 		ExecutorID: 2,
-		Amount:     5000000,
+		Amount:     5000001,
 		StatusID:   1,
-		Comments:   "Приоритетный проект",
+		Comments:   comments,
 		LoanPurposeIDs: []int{
 			1, // Пополнение оборотных средств
 			2, // Закупка сырья
@@ -117,6 +142,6 @@ func (app *application) pipeCreate(w http.ResponseWriter, r *http.Request) {
 	// w.Write([]byte("Create a new project..."))
 	// Redirect the user to the relevant page for the snippet.
 
-	http.Redirect(w, r, fmt.Sprintf("/pipe/view?id=%d", projectID), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/pipe/view/%d", projectID), http.StatusSeeOther)
 
 }

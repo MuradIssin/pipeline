@@ -12,7 +12,7 @@
         </tr>
         {{range .Projects}}
         <tr>
-            <td><a href="/pipe/view?id={{.ID}}">{{.Company}}</td>
+            <td><a href="/pipe/view/{{.ID}}">{{.Company}}</td>
             <td>{{GetBranchName .BranchID}}</td>
             <td>{{FormatNumberView .Amount}}</td>
             <td>{{GetStatusName .StatusID}}</td>
