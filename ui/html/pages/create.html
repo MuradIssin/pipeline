@@ -4,6 +4,10 @@
 <form action='/pipe/create' method='POST'>
     <div>
       <label>Компания:</label>
+      ddsd
+        {{with .Form.FieldErrors.company}}
+          <label class='error'>{{.}}</label>
+        {{end}}
       <input type='text' name='company'>
     </div>
 
@@ -66,12 +70,7 @@
         <label>Комментарии:</label>
         <textarea name='comments'></textarea>
     </div>
-    <!-- <div>
-        <label>Delete in:</label>
-        <input type='radio' name='expires' value='365' checked> One Year
-        <input type='radio' name='expires' value='7'> One Week
-        <input type='radio' name='expires' value='1'> One Day
-    </div> -->
+
     <div>
         <input type='submit' value='Создать проект'>
     </div>

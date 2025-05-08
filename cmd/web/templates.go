@@ -16,6 +16,7 @@ type templateData struct {
 	LoanPurposes   []data.LoanPurpose
 	CreditPrograms []data.CreditProgram
 	Statuses       []data.Status
+	Form           any
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

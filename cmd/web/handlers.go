@@ -8,10 +8,27 @@ import (
 	"pipeline/internal/data"
 	"pipeline/internal/models"
 	"strconv"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/julienschmidt/httprouter"
 )
+
+type projectCreateForm struct {
+	// CurrentYear    int
+	// Project        *models.Project
+	// Projects       []*models.Project
+	// Branches       []data.Branch // ✅ добавили это поле
+	// Executors      []data.Executor
+	// LoanPurposes   []data.LoanPurpose
+	// CreditPrograms []data.CreditProgram
+	// Statuses       []data.Status
+	Expires     int
+	Company     string
+	branch      int
+	FieldErrors map[string]string
+}
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	projects, err := app.projects.AllIn()
@@ -53,6 +70,12 @@ func (app *application) pipeCreate(w http.ResponseWriter, r *http.Request) {
 	dataForPage.LoanPurposes = data.LoanPurposes
 	dataForPage.CreditPrograms = data.CreditPrograms
 	dataForPage.Statuses = data.Statuses
+
+	// dataForPage.Project.BranchID = 1
+	dataForPage.Form = projectCreateForm{
+		Expires: 365,
+		// branch:  1,
+	}
 	app.render(w, http.StatusOK, "create.html", dataForPage)
 }
 
@@ -129,6 +152,30 @@ func (app *application) pipeCreatePost(w http.ResponseWriter, r *http.Request) {
 
 	comments := r.PostForm.Get("comments")
 
+	// обработчик ошибок
+	form := projectCreateForm{
+		Company:     r.PostForm.Get("company"),
+		branch:      2,
+		FieldErrors: map[string]string{},
+	}
+
+	// Initialize a map to hold any validation errors for the form fields.
+	// fieldErrors := make(map[string]string)
+	if strings.TrimSpace(company) == "" {
+		form.FieldErrors["company"] = "This field cannot be blank"
+		app.infoLog.Println(form.FieldErrors["company"])
+	} else if utf8.RuneCountInString(company) > 100 {
+		form.FieldErrors["company"] = "This field cannot be more than 100 characters long"
+	}
+
+	if len(form.FieldErrors) > 0 {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.infoLog.Println("error on forms")
+		app.render(w, http.StatusUnprocessableEntity, "create.html", data)
+		return
+	}
+
 	project := models.Project{
 		Company:          company,
 		BranchID:         branchID,
@@ -147,9 +194,7 @@ func (app *application) pipeCreatePost(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	// Выводим ID вставленного проекта
-	fmt.Println("Проект успешно добавлен с ID:", projectID)
-	app.infoLog.Println("dd")
-	// app.infoLog.Sprintf("Проект успешно добавлен с ID:", projectID)
+	app.infoLog.Println("Проект успешно добавлен с ID:", projectID)
 
 	http.Redirect(w, r, fmt.Sprintf("/pipe/view/%d", projectID), http.StatusSeeOther)
 }
