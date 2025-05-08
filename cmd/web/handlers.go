@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"pipeline/internal/data"
 	"pipeline/internal/models"
 	"strconv"
 	"time"
@@ -13,25 +14,19 @@ import (
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	// if r.URL.Path != "/" {
-	// 	app.notFound(w) // Use the notFound() helper
-	// 	return
-	// }
-
 	projects, err := app.projects.AllIn()
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-	data := app.newTemplateData(r)
-	data.Projects = projects
-	app.render(w, http.StatusOK, "home.html", data)
+	dataForPage := app.newTemplateData(r)
+	dataForPage.Projects = projects
+	app.render(w, http.StatusOK, "home.html", dataForPage)
 }
 
 func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 	id, err := strconv.Atoi(params.ByName("id"))
-	// id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
 		app.notFound(w) // Use the notFound() helper.
 		return
@@ -46,48 +41,19 @@ func (app *application) pipeView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := app.newTemplateData(r)
-	data.Project = project
-	app.render(w, http.StatusOK, "view.html", data)
-
-	// app.render(w, http.StatusOK, "view.html", &templateData{
-	// 	Project: project,
-	// })
-
-	// files := []string{
-	// 	"./ui/html/base.html",
-	// 	"./ui/html/partials/nav.html",
-	// 	"./ui/html/partials/view.html",
-	// }
-
-	// // Регистрируем функцию и парсим шаблоны
-	// funcMap := template.FuncMap{
-	// 	"GetBranchName":    models.GetBranchName,
-	// 	"GetUserName":      models.GetUserName,
-	// 	"GetGoalsName":     models.GetCreditGoal,
-	// 	"FormatNumberView": models.FormatNumber,
-	// 	"GetCreditName":    models.GetCreditProg,
-	// 	"GetStatusName":    models.GetStatus,
-	// 	"FDate":            models.FormatDate,
-	// }
-	// tmpl, err := template.New("base").Funcs(funcMap).ParseFiles(files...)
-	// if err != nil {
-	// 	app.serverError(w, err)
-	// 	return
-	// }
-	// data := &templateData{
-	// 	Project: project,
-	// }
-	// err = tmpl.ExecuteTemplate(w, "base", data)
-	// if err != nil {
-	// 	app.serverError(w, err)
-	// }
+	dataForPage := app.newTemplateData(r)
+	dataForPage.Project = project
+	app.render(w, http.StatusOK, "view.html", dataForPage)
 }
 
 func (app *application) pipeCreate(w http.ResponseWriter, r *http.Request) {
-	// w.Write([]byte("Display the form for creating a new snippet..."))
-	data := app.newTemplateData(r)
-	app.render(w, http.StatusOK, "create.html", data)
+	dataForPage := app.newTemplateData(r)
+	dataForPage.Branches = data.Branches
+	dataForPage.Executors = data.Executors
+	dataForPage.LoanPurposes = data.LoanPurposes
+	dataForPage.CreditPrograms = data.CreditPrograms
+	dataForPage.Statuses = data.Statuses
+	app.render(w, http.StatusOK, "create.html", dataForPage)
 }
 
 func (app *application) pipeCreatePost(w http.ResponseWriter, r *http.Request) {
@@ -98,37 +64,81 @@ func (app *application) pipeCreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	company := r.PostForm.Get("company")
+
+	branchStr := r.PostForm.Get("branch")
+	if branchStr == "" {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	branchID, err := strconv.Atoi(branchStr)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	executorStr := r.PostForm.Get("executor")
+	if executorStr == "" {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	executorId, err := strconv.Atoi(executorStr)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	loanPurposeIDsStr := r.Form["LoanPurposes"] // []string
+	var loanPurposeIDs []int
+	for _, idStr := range loanPurposeIDsStr {
+		id, err := strconv.Atoi(idStr)
+		if err == nil {
+			loanPurposeIDs = append(loanPurposeIDs, id)
+		}
+	}
+
+	creditProgramIDsStr := r.Form["CreditPrograms"] // []string
+	var creditProgramIDs []int
+	for _, idStr := range creditProgramIDsStr {
+		id, err := strconv.Atoi(idStr)
+		if err == nil {
+			creditProgramIDs = append(creditProgramIDs, id)
+		}
+	}
+
+	amountStr := r.PostForm.Get("amount")
+	if amountStr == "" {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	amountInt, err := strconv.Atoi(amountStr)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	statusStr := r.PostForm.Get("status")
+	if statusStr == "" {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	statusID, err := strconv.Atoi(statusStr)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
 	comments := r.PostForm.Get("comments")
 
-	// expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-	// if err != nil {
-	// 		app.clientError(w, http.StatusBadRequest)
-	// 		return
-	// }
-
-	// if r.Method != http.MethodPost {
-	// 	w.Header().Set("Allow", http.MethodPost)
-	// 	// http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-	// 	app.clientError(w, http.StatusMethodNotAllowed) // Use the clientError() helper.
-	// 	return
-	// }
-
 	project := models.Project{
-		Company:    company,
-		BranchID:   1,
-		ExecutorID: 2,
-		Amount:     5000001,
-		StatusID:   1,
-		Comments:   comments,
-		LoanPurposeIDs: []int{
-			1, // Пополнение оборотных средств
-			2, // Закупка сырья
-		},
-		CreditProgramIDs: []int{
-			1, // Кредит на развитие
-			2, // Кредит для малого бизнеса
-		},
-		LastUpdate: time.Now(),
+		Company:          company,
+		BranchID:         branchID,
+		ExecutorID:       executorId,
+		LoanPurposeIDs:   loanPurposeIDs,
+		CreditProgramIDs: creditProgramIDs,
+		Amount:           uint(amountInt),
+		StatusID:         statusID,
+		Comments:         comments,
+		LastUpdate:       time.Now(),
 	}
 
 	// Вставляем проект в базу
@@ -138,10 +148,8 @@ func (app *application) pipeCreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 	// Выводим ID вставленного проекта
 	fmt.Println("Проект успешно добавлен с ID:", projectID)
-
-	// w.Write([]byte("Create a new project..."))
-	// Redirect the user to the relevant page for the snippet.
+	app.infoLog.Println("dd")
+	// app.infoLog.Sprintf("Проект успешно добавлен с ID:", projectID)
 
 	http.Redirect(w, r, fmt.Sprintf("/pipe/view/%d", projectID), http.StatusSeeOther)
-
 }

@@ -3,19 +3,75 @@
 {{define "main"}}
 <form action='/pipe/create' method='POST'>
     <div>
-        <label>Компания:</label>
-        <input type='text' name='company'>
+      <label>Компания:</label>
+      <input type='text' name='company'>
     </div>
+
+    <div>
+      <label for="branch">Филиал:</label>
+      <select name="branch" id="branch" required>
+          <option value="">Выберите филиал</option>
+          {{range .Branches}}
+              <option value="{{.ID}}">{{.Name}}</option>
+          {{end}}
+      </select>
+    </div>
+
+    <div>
+      <label for="executor">Исполнитель:</label>
+      <select name="executor" id="executor" required>
+          <option value="">Выберите исполнителя</option>
+          {{range .Executors}}
+              <option value="{{.ID}}">{{.Name}}</option>
+          {{end}}
+      </select>
+    </div>
+
+    <div>
+      <label>Цели кредитования:</label><br>
+      {{range .LoanPurposes}}
+        <label>
+          <input type="checkbox" name="LoanPurposes" value="{{.ID}}">
+          {{.Name}}
+        </label><br>
+      {{end}}
+    </div>
+
+    <div>
+      <label>Кредитные программы:</label><br>
+      {{range .CreditPrograms}}
+        <label>
+          <input type="checkbox" name="CreditPrograms" value="{{.ID}}">
+          {{.Name}}
+        </label><br>
+      {{end}}
+    </div>
+    
+    <div>
+      <label>Сумма:</label>
+      <input type="number" name="amount" min="0" step="1" required>
+    </div>
+
+    <div>
+      <label for="status">Текущий статус заявки:</label>
+      <select name="status" id="status" required>
+          <option value="">Текущий статус</option>
+          {{range .Statuses}}
+              <option value="{{.ID}}">{{.Name}}</option>
+          {{end}}
+      </select>
+    </div>
+
     <div>
         <label>Комментарии:</label>
         <textarea name='comments'></textarea>
     </div>
-    <div>
+    <!-- <div>
         <label>Delete in:</label>
         <input type='radio' name='expires' value='365' checked> One Year
         <input type='radio' name='expires' value='7'> One Week
         <input type='radio' name='expires' value='1'> One Day
-    </div>
+    </div> -->
     <div>
         <input type='submit' value='Создать проект'>
     </div>

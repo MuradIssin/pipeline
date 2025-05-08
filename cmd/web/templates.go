@@ -2,19 +2,24 @@ package main
 
 import (
 	"path/filepath"
+	"pipeline/internal/data"
 	"pipeline/internal/models"
 	"text/template"
 )
 
 type templateData struct {
-	CurrentYear int
-	Project     *models.Project
-	Projects    []*models.Project
+	CurrentYear    int
+	Project        *models.Project
+	Projects       []*models.Project
+	Branches       []data.Branch // ✅ добавили это поле
+	Executors      []data.Executor
+	LoanPurposes   []data.LoanPurpose
+	CreditPrograms []data.CreditProgram
+	Statuses       []data.Status
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
-
 	funcMap := template.FuncMap{
 		"GetBranchName":    models.GetBranchName,
 		"GetUserName":      models.GetUserName,
@@ -24,7 +29,6 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		"GetStatusName":    models.GetStatus,
 		"FDate":            models.FormatDate,
 	}
-
 	pages, err := filepath.Glob("./ui/html/pages/*.html")
 	if err != nil {
 		return nil, err
@@ -36,30 +40,16 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		// Call ParseGlob() *on this template set* to add any partials.
 		ts, err = ts.ParseGlob("./ui/html/partials/*.html")
 		if err != nil {
 			return nil, err
 		}
-
 		// Call ParseFiles() *on this template set* to add the  page template.
 		ts, err = ts.ParseFiles(page)
 		if err != nil {
 			return nil, err
 		}
-
-		// files := []string{
-		// 	"./ui/html/base.html",
-		// 	"./ui/html/partials/nav.html",
-		// 	page,
-		// }
-		// // ts, err := template.ParseFiles(files...)
-		// ts, err := template.New(name).Funcs(funcMap).ParseFiles(files...)
-
-		// if err != nil {
-		// 	return nil, err
-		// }
 		cache[name] = ts
 	}
 	return cache, nil
