@@ -24,10 +24,16 @@ type projectCreateForm struct {
 	// LoanPurposes   []data.LoanPurpose
 	// CreditPrograms []data.CreditProgram
 	// Statuses       []data.Status
-	Expires     int
-	Company     string
-	branch      int
-	FieldErrors map[string]string
+	Expires                   int
+	Company                   string
+	SelectedBranch            string
+	SelectedBranchID          int
+	SelectedExecutorId        int
+	SelectedLoanPurposesIDs   []int
+	SelectedCreditProgramsIDs []int
+	Amount                    uint
+	SelectedStatusesId        int
+	FieldErrors               map[string]string
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -154,25 +160,48 @@ func (app *application) pipeCreatePost(w http.ResponseWriter, r *http.Request) {
 
 	// обработчик ошибок
 	form := projectCreateForm{
-		Company:     r.PostForm.Get("company"),
-		branch:      2,
-		FieldErrors: map[string]string{},
+		Company:                   r.PostForm.Get("company"),
+		SelectedBranch:            r.PostForm.Get("branch"),
+		SelectedBranchID:          branchID,
+		SelectedExecutorId:        executorId,
+		SelectedLoanPurposesIDs:   loanPurposeIDs,
+		SelectedCreditProgramsIDs: creditProgramIDs,
+		Amount:                    uint(amountInt),
+		SelectedStatusesId:        statusID,
+		FieldErrors:               map[string]string{},
 	}
 
 	// Initialize a map to hold any validation errors for the form fields.
 	// fieldErrors := make(map[string]string)
 	if strings.TrimSpace(company) == "" {
-		form.FieldErrors["company"] = "This field cannot be blank"
+		form.FieldErrors["company"] = "Компания должна иметь название"
 		app.infoLog.Println(form.FieldErrors["company"])
 	} else if utf8.RuneCountInString(company) > 100 {
 		form.FieldErrors["company"] = "This field cannot be more than 100 characters long"
 	}
 
+	if len(loanPurposeIDs) == 0 {
+		form.FieldErrors["LoanPurposes"] = "нужно выбрать цель"
+		app.infoLog.Println(form.FieldErrors["LoanPurposes"])
+	}
+
+	if len(creditProgramIDs) == 0 {
+		form.FieldErrors["CreditPrograms"] = "нужно выбрать программу"
+		app.infoLog.Println(form.FieldErrors["CreditPrograms"])
+	}
+
 	if len(form.FieldErrors) > 0 {
-		data := app.newTemplateData(r)
-		data.Form = form
-		app.infoLog.Println("error on forms")
-		app.render(w, http.StatusUnprocessableEntity, "create.html", data)
+		dataForPage := app.newTemplateData(r)
+		dataForPage.Form = form
+		dataForPage.Branches = data.Branches
+		dataForPage.Executors = data.Executors
+		dataForPage.LoanPurposes = data.LoanPurposes
+		dataForPage.CreditPrograms = data.CreditPrograms
+		dataForPage.Project = &models.Project{}
+		dataForPage.Project.Amount = uint(amountInt)
+		dataForPage.Statuses = data.Statuses
+		app.infoLog.Println("find errors on forms")
+		app.render(w, http.StatusUnprocessableEntity, "create.html", dataForPage)
 		return
 	}
 

@@ -29,6 +29,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		"GetCreditName":    models.GetCreditProg,
 		"GetStatusName":    models.GetStatus,
 		"FDate":            models.FormatDate,
+		"isIntChecked":     isIntChecked,
 	}
 	pages, err := filepath.Glob("./ui/html/pages/*.html")
 	if err != nil {
@@ -54,4 +55,13 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		cache[name] = ts
 	}
 	return cache, nil
+}
+
+func isIntChecked(selected []int, id int) bool {
+	for _, v := range selected {
+		if v == id {
+			return true
+		}
+	}
+	return false
 }
