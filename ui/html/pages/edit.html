@@ -1,9 +1,10 @@
 {{define "title"}}Редактирование проекта/заявки{{end}}
 
 {{define "main"}}
-{{with .Project}}
-<h2>Редактирование заявки #{{.ID}}</h2>
+<!-- {{with .Project}} -->
+<h2>Редактирование заявки #</h2>
 <form action='/pipe/update' method='POST'>
+  
     <div>
       <label><strong>Компания:</strong></label>
         {{with .Form.FieldErrors.company}}
@@ -12,86 +13,11 @@
       <input type='text' name='company' value="{{.Form.Company}}">
     </div>
 
-    <div>
-      <label for="branch"><strong>Филиал:</strong></label>
-      <select name="branch" id="branch" required>
-          <option value="">Выберите филиал</option>
-          {{range .Branches}}
-              <!-- <option value="{{.ID}}">{{.Name}}</option> -->
-              <!-- <option value="{{.ID}}" {{if eq $.Form.SelectedBranch (printf "%d" .ID)}}selected{{end}}>{{.Name}}</option> -->
-              <option value="{{.ID}}" {{if eq $.Form.SelectedBranchID .ID}}selected{{end}}>{{.Name}}</option>
-
-          {{end}}
-      </select>
-    </div>
-
-    <div>
-      <label for="executor"><strong>Исполнитель:</strong></label>
-      <select name="executor" id="executor" required>
-          <option value="">Выберите исполнителя</option>
-          {{range .Executors}}
-              <!-- <option value="{{.ID}}">{{.Name}}</option> -->
-              <option value="{{.ID}}" {{if eq $.Form.SelectedExecutorId .ID}}selected{{end}}>{{.Name}}</option>
-          {{end}}
-      </select>
-    </div>
-
-    <div>
-      <label><strong>Цели кредитования:</strong></label><br>
-      {{with .Form.FieldErrors.LoanPurposes}}
-        <label class='error'>{{.}}</label>
-      {{end}}
-      {{range .LoanPurposes}}
-        <label>
-          <input type="checkbox" name="LoanPurposes" value="{{.ID}}"
-          {{if isIntChecked $.Form.SelectedLoanPurposesIDs .ID}}checked{{end}}>
-          {{.Name}}
-        </label><br>
-      {{end}}
-    </div>
-
-    <div>
-      <label><strong>Кредитные программы:</strong></label><br>
-    {{with .Form.FieldErrors.CreditPrograms}}
-      <label class='error'>{{.}}</label>
-    {{end}}
-      {{range .CreditPrograms}}
-        <label>
-          <input type="checkbox" name="CreditPrograms" value="{{.ID}}"
-          {{if isIntChecked $.Form.SelectedCreditProgramsIDs .ID}}checked{{end}}>
-          {{.Name}}
-        </label><br>
-      {{end}}
-    </div>
-    
-    <div>
-      <label><strong>Сумма (тыс.тенге):</strong></label>
-      <!-- <input type="number" name="amount" min="0" step="1" required> -->
-      <input type="number" name="amount" min="1" step="1" required value="{{.Form.Amount}}">
-
-    </div>
-
-    <div>
-      <label for="status"><strong>Текущий статус заявки:</strong></label>
-      <select name="status" id="status" required>
-          <option value="">Текущий статус</option>
-          {{range .Statuses}}
-              <!-- <option value="{{.ID}}">{{.Name}}</option> -->
-              <option value="{{.ID}}" {{if eq $.Form.SelectedStatusesId .ID}}selected{{end}}>{{.Name}}</option>
-
-          {{end}}
-      </select>
-    </div>
-
-    <div>
-        <label><strong>Комментарии:</strong></label>
-        <textarea name='comments' >{{.Form.Comment}}</textarea>
-    </div>
 
     <div>
         <input type='submit' value='Обновить проект'>
         <a href='/' class="btn-cancel">Отмена</a>
     </div>
 </form>
-{{end}}
+<!-- {{end}} -->
 {{end}}

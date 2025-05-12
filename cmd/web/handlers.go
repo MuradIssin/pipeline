@@ -239,9 +239,32 @@ func (app *application) pipeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	form := projectCreateForm{
+		Company:                   project.Company,
+		SelectedBranchID:          project.BranchID,
+		SelectedExecutorId:        project.ExecutorID,
+		SelectedLoanPurposesIDs:   project.LoanPurposeIDs,
+		SelectedCreditProgramsIDs: project.CreditProgramIDs,
+		Amount:                    project.Amount,
+		SelectedStatusesId:        project.StatusID,
+		Comment:                   project.Comments,
+		FieldErrors:               map[string]string{},
+	}
+
+	// Также нужно добавить справочные данные (Branches, Executors и т.д.)
+	// data.Branches = app.data.Branches
+	// data.Executors = app.data.Users
+	// data.LoanPurposes = app.data.Goals
+	// data.CreditPrograms = app.data.CreditPrograms
+	// data.Statuses = app.data.Statuses
+
+	// Отображение формы редактирования (например, pipe_edit.html)
+	// app.render(w, http.StatusOK, "edit.html", data)
+
 	dataForPage := app.newTemplateData(r)
-	dataForPage.Project = project
-	app.render(w, http.StatusOK, "edit.html", dataForPage)
+	dataForPage.Form = form
+	// dataForPage.Project = project
+	// app.render(w, http.StatusOK, "edit.html", dataForPage)
 
 	// dataForPage := app.newTemplateData(r)
 	// dataForPage.Branches = data.Branches
@@ -251,7 +274,11 @@ func (app *application) pipeUpdate(w http.ResponseWriter, r *http.Request) {
 	// dataForPage.Statuses = data.Statuses
 
 	// dataForPage.Form = projectCreateForm{}
-	// app.render(w, http.StatusOK, "edit.html", dataForPage)
+	fmt.Println(project)
+
+	fmt.Println(form)
+
+	app.render(w, http.StatusOK, "edit.html", dataForPage)
 }
 
 func (app *application) pipeUpdatePost(w http.ResponseWriter, r *http.Request) {
