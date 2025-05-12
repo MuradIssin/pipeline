@@ -16,14 +16,6 @@ import (
 )
 
 type projectCreateForm struct {
-	// CurrentYear    int
-	// Project        *models.Project
-	// Projects       []*models.Project
-	// Branches       []data.Branch // ✅ добавили это поле
-	// Executors      []data.Executor
-	// LoanPurposes   []data.LoanPurpose
-	// CreditPrograms []data.CreditProgram
-	// Statuses       []data.Status
 	Expires                   int
 	Company                   string
 	SelectedBranch            string
@@ -33,6 +25,7 @@ type projectCreateForm struct {
 	SelectedCreditProgramsIDs []int
 	Amount                    uint
 	SelectedStatusesId        int
+	Comment                   string
 	FieldErrors               map[string]string
 }
 
@@ -77,11 +70,7 @@ func (app *application) pipeCreate(w http.ResponseWriter, r *http.Request) {
 	dataForPage.CreditPrograms = data.CreditPrograms
 	dataForPage.Statuses = data.Statuses
 
-	// dataForPage.Project.BranchID = 1
-	dataForPage.Form = projectCreateForm{
-		Expires: 365,
-		// branch:  1,
-	}
+	dataForPage.Form = projectCreateForm{}
 	app.render(w, http.StatusOK, "create.html", dataForPage)
 }
 
@@ -168,6 +157,7 @@ func (app *application) pipeCreatePost(w http.ResponseWriter, r *http.Request) {
 		SelectedCreditProgramsIDs: creditProgramIDs,
 		Amount:                    uint(amountInt),
 		SelectedStatusesId:        statusID,
+		Comment:                   comments,
 		FieldErrors:               map[string]string{},
 	}
 
@@ -192,12 +182,13 @@ func (app *application) pipeCreatePost(w http.ResponseWriter, r *http.Request) {
 
 	if len(form.FieldErrors) > 0 {
 		dataForPage := app.newTemplateData(r)
+		dataForPage.Project = &models.Project{}
+		dataForPage.Project.Company = company
 		dataForPage.Form = form
 		dataForPage.Branches = data.Branches
 		dataForPage.Executors = data.Executors
 		dataForPage.LoanPurposes = data.LoanPurposes
 		dataForPage.CreditPrograms = data.CreditPrograms
-		dataForPage.Project = &models.Project{}
 		dataForPage.Project.Amount = uint(amountInt)
 		dataForPage.Statuses = data.Statuses
 		app.infoLog.Println("find errors on forms")
@@ -226,4 +217,49 @@ func (app *application) pipeCreatePost(w http.ResponseWriter, r *http.Request) {
 	app.infoLog.Println("Проект успешно добавлен с ID:", projectID)
 
 	http.Redirect(w, r, fmt.Sprintf("/pipe/view/%d", projectID), http.StatusSeeOther)
+}
+
+func (app *application) pipeUpdate(w http.ResponseWriter, r *http.Request) {
+	// w.WriteHeader(http.StatusNotImplemented)
+	// w.Write([]byte("Функция редактирования проекта ещё не реализована."))
+
+	params := httprouter.ParamsFromContext(r.Context())
+	id, err := strconv.Atoi(params.ByName("id"))
+	if err != nil || id < 1 {
+		app.notFound(w) // Use the notFound() helper.
+		return
+	}
+	project, err := app.projects.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	dataForPage := app.newTemplateData(r)
+	dataForPage.Project = project
+	app.render(w, http.StatusOK, "edit.html", dataForPage)
+
+	// dataForPage := app.newTemplateData(r)
+	// dataForPage.Branches = data.Branches
+	// dataForPage.Executors = data.Executors
+	// dataForPage.LoanPurposes = data.LoanPurposes
+	// dataForPage.CreditPrograms = data.CreditPrograms
+	// dataForPage.Statuses = data.Statuses
+
+	// dataForPage.Form = projectCreateForm{}
+	// app.render(w, http.StatusOK, "edit.html", dataForPage)
+}
+
+func (app *application) pipeUpdatePost(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+	w.Write([]byte("Функция редактирования проекта ещё не реализована. POST"))
+}
+
+func (app *application) pipeDelete(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+	w.Write([]byte("Функция удаление проекта ещё не реализована."))
 }

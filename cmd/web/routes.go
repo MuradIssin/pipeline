@@ -42,6 +42,9 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/pipe/view/:id", app.pipeView)
 	router.HandlerFunc(http.MethodGet, "/pipe/create", app.pipeCreate)
 	router.HandlerFunc(http.MethodPost, "/pipe/create", app.pipeCreatePost)
+	router.HandlerFunc(http.MethodGet, "/pipe/update/:id", app.pipeUpdate)
+	router.HandlerFunc(http.MethodPost, "/pipe/update/:id", app.pipeUpdatePost)
+	router.HandlerFunc(http.MethodPost, "/pipe/delete/:id", app.pipeDelete)
 
 	// Create the middleware chain as normal.
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)

@@ -476,5 +476,7 @@ func GetStatus(id int) string {
 }
 
 func FormatDate(t time.Time) string {
-	return t.Format("02.01.2006 15:04")
+	// return t.Format("02.01.2006 15:04")
+	location := time.FixedZone("UTC+5", 5*60*60) // 5 часов * 60 минут * 60 секунд
+	return t.In(location).Format("02.01.2006 15:04") + " "
 }

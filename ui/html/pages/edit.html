@@ -1,7 +1,9 @@
-{{define "title"}}Создать новый проект/заявку{{end}}
+{{define "title"}}Редактирование проекта/заявки{{end}}
 
 {{define "main"}}
-<form action='/pipe/create' method='POST'>
+{{with .Project}}
+<h2>Редактирование заявки #{{.ID}}</h2>
+<form action='/pipe/update' method='POST'>
     <div>
       <label><strong>Компания:</strong></label>
         {{with .Form.FieldErrors.company}}
@@ -87,8 +89,9 @@
     </div>
 
     <div>
-        <input type='submit' value='Создать проект'>
+        <input type='submit' value='Обновить проект'>
         <a href='/' class="btn-cancel">Отмена</a>
     </div>
 </form>
+{{end}}
 {{end}}
