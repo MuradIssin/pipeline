@@ -263,6 +263,85 @@ func (m *ProjectModel) Insert(p Project) (int, error) {
 	return projectID, nil
 }
 
+func (m *ProjectModel) Update(id int, p Project) error {
+	// Обновление основной информации о проекте
+	_, err := m.DB.Exec(`
+		UPDATE projects
+		SET company = ?, branch_id = ?, executor_id = ?, amount = ?, status_id = ?, comments = ?, last_update = ?
+		WHERE id = ?`,
+		p.Company, p.BranchID, p.ExecutorID, p.Amount, p.StatusID, p.Comments, p.LastUpdate, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при обновлении проекта: %v", err)
+	}
+
+	// Удаление старых целей кредита
+	_, err = m.DB.Exec(`DELETE FROM project_loan_purposes WHERE project_id = ?`, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при удалении старых целей кредита: %v", err)
+	}
+
+	// Вставка новых целей кредита
+	for _, purposeID := range p.LoanPurposeIDs {
+		_, err := m.DB.Exec(`
+			INSERT INTO project_loan_purposes (project_id, purpose_id)
+			VALUES (?, ?)`, id, purposeID)
+		if err != nil {
+			return fmt.Errorf("ошибка при вставке цели кредита: %v", err)
+		}
+	}
+
+	// Удаление старых кредитных программ
+	_, err = m.DB.Exec(`DELETE FROM project_credit_programs WHERE project_id = ?`, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при удалении старых кредитных программ: %v", err)
+	}
+
+	// Вставка новых кредитных программ
+	for _, creditProgramID := range p.CreditProgramIDs {
+		_, err := m.DB.Exec(`
+			INSERT INTO project_credit_programs (project_id, credit_program_id)
+			VALUES (?, ?)`, id, creditProgramID)
+		if err != nil {
+			return fmt.Errorf("ошибка при вставке кредитной программы: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func (m *ProjectModel) SoftDelete(id int) error {
+	result, err := m.DB.Exec(`
+		UPDATE projects
+		SET is_deleted = 1, last_update = ?
+		WHERE id = ? AND is_deleted != 1`, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("ошибка при мягком удалении проекта: %v", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNoRecord
+	}
+
+	// Также пометить связанные записи в project_loan_purposes и project_credit_programs как удалённые
+	_, err = m.DB.Exec(`
+		UPDATE project_loan_purposes SET is_deleted = 1 WHERE project_id = ?`, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при мягком удалении целей кредитования: %v", err)
+	}
+
+	_, err = m.DB.Exec(`
+		UPDATE project_credit_programs SET is_deleted = 1 WHERE project_id = ?`, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при мягком удалении кредитных программ: %v", err)
+	}
+
+	return nil
+}
+
 // This will return a specific snippet based on its id.
 func (m *ProjectModel) Get(id int) (*Project, error) {
 	// Получаем основную информацию о проекте
